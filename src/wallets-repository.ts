@@ -1,8 +1,4 @@
-interface Wallet {
-    passphrase: string,
-    address: string,
-    publicKey: string
-}
+import { Wallet } from "./types";
 
 export class WalletRepository {
     private wallets: Wallet[] = []

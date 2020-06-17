@@ -3,6 +3,8 @@ import {config} from "./config/config";
 import {testWallets} from "./config/testnet";
 import {Crypto, Enums, Identities, Managers, Transactions, Utils} from "@arkecosystem/crypto";
 
+import {App} from "./types";
+
 import assert = require("assert");
 
 
@@ -60,7 +62,7 @@ const configureCrypto = async (app) => {
 }
 
 export class Builder {
-    constructor(private app: any) {
+    constructor(private app: App) {
     }
 
     async buildTransaction(type: number, quantity: number) {
