@@ -1,4 +1,4 @@
-module.exports = [
+export const wallets = [
         {
             "passphrase": "2.6-wallet1",
             "address": "DHKxXag9PjfjHBbPg3HQS5WCaQZdgDf6yi",
