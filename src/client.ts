@@ -1,13 +1,15 @@
 import { httpie } from "@arkecosystem/core-utils"
 import {config} from "./config/config";
 import {Identities} from "@arkecosystem/crypto";
+import {seeds} from "./config/testnet";
 
 export class Client {
-    public constructor(private seed: string) {
-    }
-
     private getSeed() {
-        return this.seed
+        if (config.peer) {
+            return config.peer;
+        }
+
+        return seeds[Math.floor(Math.random()*seeds.length)];
     }
 
     public async retrieveSenderWallet (sender: string, seed?: string) {

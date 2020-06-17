@@ -1,9 +1,7 @@
 import { Managers} from "@arkecosystem/crypto"
-
-import { seeds } from "./config/testnet"
-import { config } from "./config/config"
 import { Client } from "./client"
 import { Builder } from "./builder"
+import { WalletRepository } from "./wallets-repository"
 
 /**
  * $ node index.js
@@ -52,27 +50,20 @@ import { Builder } from "./builder"
  * - All outgoing transactions will now be multi signed with the configured `passphrases`
  * - Remove passphrases and change indexes to test `min` etc.
  */
-
-const randomSeed = () => {
-    if (config.peer) {
-        return config.peer;
-    }
-
-    return seeds[Math.floor(Math.random()*seeds.length)];
-}
-
-const client = new Client(randomSeed())
+const preset = "testnet";
 
 const app = {
-    client: client,
-    nonces: {}
+    preset: preset,
+    client: new Client(),
+    nonces: {},
+    walletRepository: new WalletRepository(require(`./config/${preset}`).testWallets)
 }
 
 const configureCrypto = async () => {
-    Managers.configManager.setFromPreset("testnet");
+    Managers.configManager.setFromPreset(preset);
 
     try {
-        const height = await client.retrieveHeight()
+        const height = await app.client.retrieveHeight()
 
         Managers.configManager.setHeight(height)
     } catch (ex) {
@@ -106,7 +97,7 @@ const main = async (data) => {
 
         let transactions = await builder.buildTransaction(type, quantity)
 
-        await client.postTransaction(transactions)
+        await app.client.postTransaction(transactions)
 
     } catch (ex) {
         console.log(ex.message);
