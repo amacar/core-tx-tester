@@ -73,8 +73,8 @@ export class Builder {
             throw new Error("Unknown type");
         }
 
-        const senderSecret = config.passphrase || testWallets[Math.floor(Math.random()*testWallets.length)].passphrase;
-        const recipientSecret = testWallets[Math.floor(Math.random()*testWallets.length)].passphrase;
+        const senderSecret = this.app.walletRepository.getRandomWallet().passphrase
+        const recipientSecret = this.app.walletRepository.getRandomWallet().passphrase
 
         const senderKeys = Identities.Keys.fromPassphrase(senderSecret);
         const recipientId = config.recipientId || Identities.Address.fromPassphrase(recipientSecret);
@@ -190,6 +190,32 @@ export class Builder {
                 const lockTransactionId = refund.lockTransactionId || ((await this.app.client.retrieveTransaction(senderWallet.publicKey, 8))[0].id)
 
                 transaction.htlcRefundAsset({ lockTransactionId });
+            // } else if (type === 11 && Managers.configManager.getMilestone().aip11) { // BusinessRegistration
+            //     transaction.businessRegistrationAsset(config.business.registration);
+            //
+            // } else if (type == 12 && Managers.configManager.getMilestone().aip11) { // BusinessResignation
+            // } else if (type == 13 && Managers.configManager.getMilestone().aip11) { // BusinessUpdate
+            //     transaction.businessUpdateAsset(config.business.update);
+            //
+            // } else if (type == 14 && Managers.configManager.getMilestone().aip11) { // BridgechainRegistration
+            //     transaction.bridgechainRegistrationAsset(config.bridgechain.registration);
+            //
+            // } else if (type == 15 && Managers.configManager.getMilestone().aip11) { // BridgechainResignation
+            //     if (!config.bridgechain.resignation.bridgechainId) {
+            //         config.bridgechain.resignation.bridgechainId = await this.app.client.retrieveBridgechainId(senderKeys.publicKey)
+            //     }
+            //     transaction.bridgechainResignationAsset(config.bridgechain.resignation.bridgechainId);
+            //
+            // } else if (type === 16 && Managers.configManager.getMilestone().aip11) { // BridgechainUpdate
+            //     if (!config.bridgechain.update.bridgechainId) {
+            //         config.bridgechain.update.bridgechainId = await this.app.client.retrieveBridgechainId(senderKeys.publicKey)
+            //     }
+            //
+            //     if (!config.bridgechain.update.seedNodes.length) {
+            //         config.bridgechain.update.seedNodes.push(randomSeed())
+            //     }
+            //
+            //     transaction.bridgechainUpdateAsset(config.bridgechain.update);
             } else {
                 throw new Error("Version 2 not supported.");
             }
