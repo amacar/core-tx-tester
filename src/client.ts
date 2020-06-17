@@ -1,5 +1,5 @@
 import { httpie } from "@arkecosystem/core-utils"
-import {config} from "../config/config";
+import {config} from "./config/config";
 import {Identities} from "@arkecosystem/crypto";
 
 export class Client {
@@ -40,6 +40,16 @@ export class Client {
         } catch (ex) {
             console.log("retrieveNetworktime: " + ex.message);
             return 0;
+        }
+    }
+
+    public async retrieveHeight () {
+        try {
+            const response = await httpie.get(`http://${this.getSeed()}:4003/api/blockchain`);
+            return response.body.data.block.height;
+        } catch (ex) {
+            console.log("retrieveHeight: " + ex.message);
+            return 1;
         }
     }
 

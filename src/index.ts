@@ -1,14 +1,13 @@
 import { Crypto, Enums, Utils, Managers, Transactions, Identities } from "@arkecosystem/crypto"
 
-import * as MagistrateCrypto from "@arkecosystem/core-magistrate-crypto"
-
 import { httpie } from "@arkecosystem/core-utils"
 import assert = require("assert");
 
 
 import { testWallets, seeds } from "./config/testnet"
 import { config } from "./config/config"
-import { Client } from "./client/client"
+import { Client } from "./client"
+import { builders } from "./builders"
 
 /**
  * $ node index.js
@@ -57,13 +56,24 @@ import { Client } from "./client/client"
  * - All outgoing transactions will now be multi signed with the configured `passphrases`
  * - Remove passphrases and change indexes to test `min` etc.
  */
+
+const randomSeed = () => {
+    if (config.peer) {
+        return config.peer;
+    }
+
+    return seeds[Math.floor(Math.random()*seeds.length)];
+}
+
+const client = new Client(randomSeed())
+
 const configureCrypto = async () => {
     Managers.configManager.setFromPreset("testnet");
 
     try {
-        const response = await httpie.get(`http://${randomSeed()}:4003/api/blockchain`);
+        const height = await client.retrieveHeight()
 
-        Managers.configManager.setHeight(response.body.data.block.height)
+        Managers.configManager.setHeight(height)
     } catch (ex) {
         console.log("configureCrypto: " + ex.message);
         process.exit()
@@ -84,15 +94,7 @@ const prompt = (question, callback: Function) => {
 
 const nonces = {}
 
-const randomSeed = () => {
-    if (config.peer) {
-        return config.peer;
-    }
 
-    return seeds[Math.floor(Math.random()*seeds.length)];
-}
-
-const client = new Client(randomSeed())
 
 const main = async (data) => {
     try {
@@ -335,36 +337,3 @@ const multiSignatureAddress = () => {
 }
 
 prompt(`Ѧ `, main);
-
-
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BusinessRegistrationTransaction);
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BusinessResignationTransaction);
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BusinessUpdateTransaction);
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BridgechainRegistrationTransaction);
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BridgechainResignationTransaction);
-Transactions.TransactionRegistry.registerTransactionType(MagistrateCrypto.Transactions.BridgechainUpdateTransaction);
-
-const builders = {
-    0: Transactions.BuilderFactory.transfer,
-    1: Transactions.BuilderFactory.secondSignature,
-    2: Transactions.BuilderFactory.delegateRegistration,
-    3: Transactions.BuilderFactory.vote,
-    4: Transactions.BuilderFactory.multiSignature,
-    5: Transactions.BuilderFactory.ipfs,
-    6: Transactions.BuilderFactory.multiPayment,
-    7: Transactions.BuilderFactory.delegateResignation,
-    8: Transactions.BuilderFactory.htlcLock,
-    9: Transactions.BuilderFactory.htlcClaim,
-    10: Transactions.BuilderFactory.htlcRefund,
-
-    // TECHNICALLY, the AIP103 types are in typeGroup 2
-    // and range from type 0 - 5. But to keep things simple we simply
-    // pretend they follow up on HTLC.
-
-    11: () => new MagistrateCrypto.Builders.BusinessRegistrationBuilder(),
-    12: () => new MagistrateCrypto.Builders.BusinessResignationBuilder(),
-    13: () => new MagistrateCrypto.Builders.BusinessUpdateBuilder(),
-    14: () => new MagistrateCrypto.Builders.BridgechainRegistrationBuilder(),
-    15: () => new MagistrateCrypto.Builders.BridgechainResignationBuilder(),
-    16: () => new MagistrateCrypto.Builders.BridgechainUpdateBuilder(),
-}
