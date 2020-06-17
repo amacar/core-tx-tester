@@ -1,4 +1,4 @@
-import { wallets as testWallets } from "./wallets"
-import { seeds } from "./seeds"
+import { wallets as testWallets } from "./wallets.json"
+import { seeds } from "./seeds.json"
 
 module.exports = { testWallets, seeds }

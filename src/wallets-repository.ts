@@ -7,6 +7,10 @@ export class WalletRepository {
         this.wallets = wallets
     }
 
+    public getWallets(): Wallet[] {
+        return this.wallets;
+    }
+
     public getRandomWallet(): Wallet {
         return this.wallets[Math.floor(Math.random()*this.wallets.length)];
     }

@@ -95,7 +95,7 @@ const actions = [
     {
         description: "List wallets",
         handler: async (data) => {
-            console.log("List wallets")
+            console.log("Wallets: \n", app.walletRepository.getWallets())
         }
     },
     {
