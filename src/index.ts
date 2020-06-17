@@ -59,7 +59,7 @@ const app = {
     walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets)
 }
 
-const main = async (data) => {
+const sendTransaction = async (data) => {
     try {
         let [type, quantity] = data.split(" ");
 
@@ -74,21 +74,23 @@ const main = async (data) => {
 
     } catch (ex) {
         console.log(ex.message);
-    } finally {
-        prompt(`Ѧ `, main);
     }
 }
 
 const prompt = (question, callback: Function) => {
-    const stdin = process.stdin;
-    const stdout = process.stdout
+    return new Promise((resolve) => {
+        const stdin = process.stdin;
+        const stdout = process.stdout
 
-    stdin.resume();
-    stdout.write(question);
+        stdin.resume();
+        stdout.write(question);
 
-    stdin.once('data', (data) => {
-        callback(data.toString().trim());
-    });
+        stdin.once('data', async (data) => {
+            await callback(data.toString().trim());
+
+            resolve()
+        });
+    })
 }
 
 const actions = [
@@ -99,9 +101,9 @@ const actions = [
         }
     },
     {
-        description: "Make transaction",
+        description: "Send transaction",
         handler: async (data) => {
-            console.log("Make transaction")
+            await prompt(`Ѧ `, sendTransaction);
         }
     }
 ]
