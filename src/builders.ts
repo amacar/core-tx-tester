@@ -32,3 +32,24 @@ export const builders = {
     15: () => new MagistrateCrypto.Builders.BridgechainResignationBuilder(),
     16: () => new MagistrateCrypto.Builders.BridgechainUpdateBuilder(),
 }
+
+export const transactions = {
+    0: "Transfer",
+    1: "Second Signature",
+    2: "Delegate Registration",
+    3: "Vote",
+    4: "Multi Signature",
+    5: "Ipfs",
+    6: "Multi Payment",
+    7: "Delegate Registration",
+    8: "Htlc Lock",
+    9: "Htlc Claim",
+    10: "Htlc Refound",
+
+    11: "Business Registration",
+    12: "Business Resignation",
+    13: "Business Update",
+    14: "Bridgechain Registration",
+    15: "Bridgechain Resignation",
+    16: "Bridgechain Update",
+}

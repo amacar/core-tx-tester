@@ -1,5 +1,6 @@
 import { Client } from "./client"
 import { Builder } from "./builder"
+import { transactions } from "./builders"
 import { WalletRepository } from "./wallets-repository"
 
 import {config} from "./config/config";
@@ -103,7 +104,7 @@ const actions = [
     {
         description: "Send transaction",
         handler: async (data) => {
-            await prompt(`Ѧ `, sendTransaction);
+            await prompt(selectTransactionQuestion(), sendTransaction);
         }
     }
 ]
@@ -113,7 +114,19 @@ const selectActionQuestion = () => {
 
     let count = 0;
     for(let action of actions) {
-        question += `\n [${count++}] - ${action.description}]`
+        question += `\n [${count++}] - ${action.description}`
+    }
+
+    question += "\n";
+
+    return question;
+}
+
+const selectTransactionQuestion = () => {
+    let question = "\nSelect transaction:";
+
+    for(let key of Object.keys(transactions)) {
+        question += `\n [${key}] - ${transactions[key]}`
     }
 
     question += "\n";
