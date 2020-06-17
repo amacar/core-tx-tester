@@ -45,11 +45,27 @@ const secondSign = (builder, passphrase) => {
     }
 }
 
+const configureCrypto = async (app) => {
+    // @ts-ignore
+    Managers.configManager.setFromPreset(config.network);
+
+    try {
+        const height = await app.client.retrieveHeight()
+
+        Managers.configManager.setHeight(height)
+    } catch (ex) {
+        console.log("configureCrypto: " + ex.message);
+        process.exit()
+    }
+}
+
 export class Builder {
     constructor(private app: any) {
     }
 
     async buildTransaction(type: number, quantity: number) {
+        await configureCrypto(this.app)
+
         const builder = builders[type];
         if (!builder) {
             throw new Error("Unknown type");

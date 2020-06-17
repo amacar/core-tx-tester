@@ -3,6 +3,7 @@ const { Crypto } = require("@arkecosystem/crypto");
 const randomName = (type) => `${type}-${Math.round(Math.random() * 1000000000000)}`
 
 export const config = {
+    network: "testnet",
     // log sent transaction payload
     verbose: true,
     // defaults to random genesis seed node
