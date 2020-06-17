@@ -6,6 +6,7 @@ import {Crypto, Enums, Identities, Managers, Transactions, Utils} from "@arkecos
 import {App} from "./types";
 
 import assert = require("assert");
+import {ExtendedWallet} from "./types/wallet";
 
 
 const multiSignatureAddress = () => {
@@ -73,16 +74,16 @@ export class Builder {
             throw new Error("Unknown type");
         }
 
-        const senderSecret = this.app.walletRepository.getRandomWallet().passphrase
-        const recipientSecret = this.app.walletRepository.getRandomWallet().passphrase
+        let senderWallet = this.app.walletRepository.getRandomWallet() as ExtendedWallet
+        let recipientWallet = this.app.walletRepository.getRandomWallet()
 
-        const senderKeys = Identities.Keys.fromPassphrase(senderSecret);
-        const recipientId = config.recipientId || Identities.Address.fromPassphrase(recipientSecret);
+        const senderKeys = Identities.Keys.fromPassphrase(senderWallet.passphrase);
+        const recipientId = Identities.Address.fromPassphrase(recipientWallet.passphrase);
 
-        const senderWallet = await this.app.client.retrieveSenderWallet(Identities.Address.fromPublicKey(senderKeys.publicKey));
-        if (!senderWallet.publicKey) {
-            senderWallet.publicKey = senderKeys.publicKey;
-        }
+        senderWallet = {
+            ...senderWallet,
+            ...(await this.app.client.retrieveSenderWallet(Identities.Address.fromPublicKey(senderKeys.publicKey)))
+        };
 
         const transactions = [];
 
@@ -253,7 +254,7 @@ export class Builder {
             }
 
             if (!config.multiSignature.enabled || type === 4) {
-                sign(transaction, senderSecret);
+                sign(transaction, senderWallet.passphrase);
 
                 if (config.secondPassphrase) {
                     secondSign(transaction, config.secondPassphrase);
