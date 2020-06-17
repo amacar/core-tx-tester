@@ -59,18 +59,6 @@ const app = {
     walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets)
 }
 
-const prompt = (question, callback: Function) => {
-    const stdin = process.stdin;
-    const stdout = process.stdout
-
-    stdin.resume();
-    stdout.write(question);
-
-    stdin.once('data', (data) => {
-        callback(data.toString().trim());
-    });
-}
-
 const main = async (data) => {
     try {
         let [type, quantity] = data.split(" ");
@@ -91,4 +79,59 @@ const main = async (data) => {
     }
 }
 
-prompt(`Ѧ `, main);
+const prompt = (question, callback: Function) => {
+    const stdin = process.stdin;
+    const stdout = process.stdout
+
+    stdin.resume();
+    stdout.write(question);
+
+    stdin.once('data', (data) => {
+        callback(data.toString().trim());
+    });
+}
+
+const actions = [
+    {
+        description: "List wallets",
+        handler: async (data) => {
+            console.log("List wallets")
+        }
+    },
+    {
+        description: "Make transaction",
+        handler: async (data) => {
+            console.log("Make transaction")
+        }
+    }
+]
+
+const selectActionQuestion = () => {
+    let question = "\nSelect action: ";
+
+    let count = 0;
+    for(let action of actions) {
+        question += `\n [${count++}] - ${action.description}]`
+    }
+
+    question += "\n";
+
+    return question;
+}
+
+const resolveAction = async (data) => {
+    try {
+        let [actionNumber] = data.split(" ");
+
+        actionNumber = +actionNumber
+        let action = actions[actionNumber]
+
+        await action.handler(data)
+    } catch (ex) {
+        console.log(ex.message);
+    } finally {
+        prompt(selectActionQuestion(), resolveAction);
+    }
+}
+
+prompt(selectActionQuestion(), resolveAction);
