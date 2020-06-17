@@ -8,6 +8,7 @@ import assert = require("assert");
 
 import { testWallets, seeds } from "./config/testnet"
 import { config } from "./config/config"
+import { Client } from "./client/client"
 
 /**
  * $ node index.js
@@ -83,6 +84,16 @@ const prompt = (question, callback: Function) => {
 
 const nonces = {}
 
+const randomSeed = () => {
+    if (config.peer) {
+        return config.peer;
+    }
+
+    return seeds[Math.floor(Math.random()*seeds.length)];
+}
+
+const client = new Client(randomSeed())
+
 const main = async (data) => {
     try {
         await configureCrypto();
@@ -103,7 +114,7 @@ const main = async (data) => {
         const senderKeys = Identities.Keys.fromPassphrase(senderSecret);
         const recipientId = config.recipientId || Identities.Address.fromPassphrase(recipientSecret);
 
-        const senderWallet = await retrieveSenderWallet(Identities.Address.fromPublicKey(senderKeys.publicKey));
+        const senderWallet = await client.retrieveSenderWallet(Identities.Address.fromPublicKey(senderKeys.publicKey));
         if (!senderWallet.publicKey) {
             senderWallet.publicKey = senderKeys.publicKey;
         }
@@ -115,7 +126,7 @@ const main = async (data) => {
             if (!nonce) {
                 let senderNonce = senderWallet.nonce;
                 if (config.multiSignature.enabled) {
-                    senderNonce = (await retrieveSenderWallet(multiSignatureAddress().address)).nonce;
+                    senderNonce = (await client.retrieveSenderWallet(multiSignatureAddress().address)).nonce;
                 }
 
                 nonce = Utils.BigNumber.make(config.startNonce || senderNonce || 0).plus(1);
@@ -195,7 +206,7 @@ const main = async (data) => {
                 transaction.amount(config.amount);
 
                 if (config.htlc.lock.expiration.type === Enums.HtlcLockExpirationType.EpochTimestamp) {
-                    const networktime = await retrieveNetworktime();
+                    const networktime = await client.retrieveNetworktime();
                     if (config.htlc.lock.expiration.value < networktime) {
                         config.htlc.lock.expiration.value += networktime;
                     }
@@ -205,13 +216,13 @@ const main = async (data) => {
             } else if (type === Enums.TransactionType.HtlcClaim && Managers.configManager.getMilestone().aip11) {
 
                 const claim = config.htlc.claim;
-                const lockTransactionId = claim.lockTransactionId || ((await retrieveTransaction(senderWallet.publicKey, 8))[0].id)
+                const lockTransactionId = claim.lockTransactionId || ((await client.retrieveTransaction(senderWallet.publicKey, 8))[0].id)
 
                 transaction.htlcClaimAsset({ ...claim, lockTransactionId});
 
             } else if (type === Enums.TransactionType.HtlcRefund && Managers.configManager.getMilestone().aip11) {
                 const refund = config.htlc.refund;
-                const lockTransactionId = refund.lockTransactionId || ((await retrieveTransaction(senderWallet.publicKey, 8))[0].id)
+                const lockTransactionId = refund.lockTransactionId || ((await client.retrieveTransaction(senderWallet.publicKey, 8))[0].id)
 
                 transaction.htlcRefundAsset({ lockTransactionId });
             } else {
@@ -271,7 +282,7 @@ const main = async (data) => {
             transactions.push(payload);
         }
 
-        await postTransaction(transactions)
+        await client.postTransaction(transactions)
 
     } catch (ex) {
         console.log(ex.message);
@@ -306,48 +317,9 @@ const secondSign = (builder, passphrase) => {
     }
 }
 
-const retrieveSenderWallet = async sender => {
-    try {
-        const response = await httpie.get(`http://${randomSeed()}:4003/api/wallets/${sender}`);
-        return response.body.data;
-    } catch (ex) {
-        console.log(sender);
-        console.log("retrieveSenderWallet: " + ex.message);
-        console.log("Probably a cold wallet");
-        return {};
-    }
-}
 
-const retrieveTransaction = async (sender, type) => {
-    try {
-        const response = await httpie.get(`http://${randomSeed()}:4003/api/transactions?type=${type}&senderPublicKey=${sender}`);
-        return response.body.data;
-    } catch (ex) {
-        console.log("retrieveTransaction: " + ex.message);
-        return {};
-    }
 
-}
 
-const retrieveNetworktime = async () => {
-    try {
-        const response = await httpie.get(`http://${randomSeed()}:4003/api/node/status`);
-        return response.body.data.timestamp;
-    } catch (ex) {
-        console.log("retrieveNetworktime: " + ex.message);
-        return 0;
-    }
-
-}
-
-const retrieveBridgechainId = async (sender) => {
-    if (config.multiSignature.enabled) {
-        sender = multiSignatureAddress().publicKey
-    }
-
-    const wallet = await retrieveSenderWallet(Identities.Address.fromPublicKey(sender));
-    return Object.keys(wallet.attributes.business.bridgechains).reverse()[0]
-}
 
 const multiSignatureAddress = () => {
     return {
@@ -361,39 +333,6 @@ const multiSignatureAddress = () => {
         }),
     }
 }
-
-const postTransaction = async transactions => {
-    try {
-        if (config.coldrun) {
-            return;
-        }
-
-        const response = await httpie.post(`http://${randomSeed()}:4003/api/transactions`, {
-            headers: { "Content-Type": "application/json", port: 4003 },
-            body: {
-                transactions: transactions,
-            },
-        });
-
-        if (response.status !== 200 || response.body.errors) {
-            console.log(JSON.stringify(response.body));
-      //      process.exit();
-        } else {
-            console.log(`Ѧ SENT ${transactions.length} transaction(s) [TYPE: ${transactions[0].type}] Ѧ`)
-        }
-    } catch (ex) {
-        console.log(JSON.stringify(ex.message));
-    }
-}
-
-const randomSeed = () => {
-    if (config.peer) {
-        return config.peer;
-    }
-
-    return seeds[Math.floor(Math.random()*seeds.length)];
-}
-
 
 prompt(`Ѧ `, main);
 
