@@ -1,13 +1,11 @@
-import { builders } from "./builders"
+import {builders} from "./builders"
 import {config} from "./config/config";
 import {testWallets} from "./config/testnet";
 import {Crypto, Enums, Identities, Managers, Transactions, Utils} from "@arkecosystem/crypto";
 
-import {App} from "./types";
-
+import {App, ExtendedWallet, WalletChange} from "./types";
+import {WalletSignType} from "./enums";
 import assert = require("assert");
-import {ExtendedWallet} from "./types/wallet";
-
 
 const multiSignatureAddress = () => {
     return {
@@ -62,11 +60,12 @@ const configureCrypto = async (app) => {
     }
 }
 
+
 export class Builder {
     constructor(private app: App) {
     }
 
-    async buildTransaction(type: number, quantity: number) {
+    async buildTransaction(type: number, quantity: number, senderAddress?: string, recipientAddress?: string) {
         await configureCrypto(this.app)
 
         const builder = builders[type];
@@ -74,8 +73,10 @@ export class Builder {
             throw new Error("Unknown type");
         }
 
-        let senderWallet = this.app.walletRepository.getRandomWallet() as ExtendedWallet
-        let recipientWallet = this.app.walletRepository.getRandomWallet()
+        const walletChanges: WalletChange[] = []
+
+        let senderWallet = (senderAddress ? this.app.walletRepository.getWallet(senderAddress) : this.app.walletRepository.getRandomWallet()) as ExtendedWallet
+        let recipientWallet = recipientAddress ? this.app.walletRepository.getWallet(recipientAddress) : this.app.walletRepository.getRandomWallet()
 
         const senderKeys = Identities.Keys.fromPassphrase(senderWallet.passphrase);
         const recipientId = Identities.Address.fromPassphrase(recipientWallet.passphrase);
@@ -118,6 +119,11 @@ export class Builder {
                 const secondPassphrase = config.secondPassphrase || "second passphrase";
                 transaction.signatureAsset(secondPassphrase);
 
+                walletChanges.push({
+                    transaction: transaction,
+                    address: senderWallet.address,
+                    secondPassphrase: config.secondPassphrase || "second passphrase"
+                })
             } else if (type === Enums.TransactionType.DelegateRegistration) {
                 const username = config.delegateName || `delegate.${senderKeys.publicKey.slice(0, 10)}`;
                 transaction.usernameAsset(username);
@@ -141,6 +147,12 @@ export class Builder {
                 }
 
                 transaction.min(config.multiSignature.asset.min)
+
+                walletChanges.push({
+                    transaction: transaction,
+                    address: senderWallet.address,
+                    passphrases: config.multiSignature.asset.participants
+                })
 
             } else if (type === Enums.TransactionType.Ipfs && Managers.configManager.getMilestone().aip11) {
                 transaction.ipfsAsset(config.ipfs)
@@ -230,38 +242,53 @@ export class Builder {
                 transaction.vendorField(vendorField);
             }
 
-            if (config.multiSignature.enabled && type !== 4) {
-                const multiSigAddress = multiSignatureAddress();
-                transaction.senderPublicKey(multiSigAddress.publicKey);
-                console.log(`MultiSignature: ${JSON.stringify(multiSigAddress, undefined, 4)}`);
-            }
-
-            if (config.multiSignature.enabled || type === 4) {
-                if (type === 4) {
-                    const multiSignatureAddress = Identities.Address.fromMultiSignatureAsset(transaction.data.asset.multiSignature);
-                    console.log(`Created MultiSignature address: ${multiSignatureAddress}`);
-                    transaction.senderPublicKey(senderWallet.publicKey);
-
-                    const participants = config.multiSignature.asset.participants;
-                    for (let i = 0; i < participants.length; i++) {
-                        transaction.multiSign(participants[i], i);
-                    }
-                } else {
-                    for (const {index, passphrase} of config.multiSignature.passphrases) {
-                        transaction.multiSign(passphrase, index);
-                    }
-                }
-            }
-
-            if (!config.multiSignature.enabled || type === 4) {
+            if (senderWallet.signType === WalletSignType.Basic) {
                 sign(transaction, senderWallet.passphrase);
+            }
 
-                if (config.secondPassphrase) {
-                    secondSign(transaction, config.secondPassphrase);
-                } else if (senderWallet.secondPublicKey) {
-                    secondSign(transaction, "second passphrase");
+            if (senderWallet.signType === WalletSignType.SecondSignature) {
+                sign(transaction, senderWallet.passphrase);
+                secondSign(transaction, config.secondPassphrase || "second passphrase");
+            }
+
+            if (senderWallet.signType === WalletSignType.MultiSignature) {
+                for (const {index, passphrase} of config.multiSignature.passphrases) {
+                    transaction.multiSign(passphrase, index);
                 }
             }
+
+            // if (config.multiSignature.enabled && type !== 4) {
+            //     const multiSigAddress = multiSignatureAddress();
+            //     transaction.senderPublicKey(multiSigAddress.publicKey);
+            //     console.log(`MultiSignature: ${JSON.stringify(multiSigAddress, undefined, 4)}`);
+            // }
+            //
+            // if (config.multiSignature.enabled || type === 4) {
+            //     if (type === 4) {
+            //         const multiSignatureAddress = Identities.Address.fromMultiSignatureAsset(transaction.data.asset.multiSignature);
+            //         console.log(`Created MultiSignature address: ${multiSignatureAddress}`);
+            //         transaction.senderPublicKey(senderWallet.publicKey);
+            //
+            //         const participants = config.multiSignature.asset.participants;
+            //         for (let i = 0; i < participants.length; i++) {
+            //             transaction.multiSign(participants[i], i);
+            //         }
+            //     } else {
+            //         for (const {index, passphrase} of config.multiSignature.passphrases) {
+            //             transaction.multiSign(passphrase, index);
+            //         }
+            //     }
+            // }
+            //
+            // if (!config.multiSignature.enabled || type === 4) {
+            //     sign(transaction, senderWallet.passphrase);
+            //
+            //     if (config.secondPassphrase) {
+            //         secondSign(transaction, config.secondPassphrase);
+            //     } else if (senderWallet.secondPublicKey) {
+            //         secondSign(transaction, "second passphrase");
+            //     }
+            // }
 
             const instance = transaction.build();
             const payload = instance.toJson();
@@ -274,6 +301,6 @@ export class Builder {
             transactions.push(payload);
         }
 
-        return transactions
+        return { transactions, walletChanges }
     }
 }

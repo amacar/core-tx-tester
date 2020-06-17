@@ -79,9 +79,12 @@ export class Client {
 
             if (response.status !== 200 || response.body.errors) {
                 console.log(JSON.stringify(response.body));
-                //      process.exit();
+
+                return response.body
             } else {
                 console.log(`Ѧ SENT ${transactions.length} transaction(s) [TYPE: ${transactions[0].type}] Ѧ`)
+
+                return response.body
             }
         } catch (ex) {
             console.log(JSON.stringify(ex.message));

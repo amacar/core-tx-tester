@@ -62,16 +62,18 @@ const app = {
 
 const sendTransaction = async (data) => {
     try {
-        let [type, quantity] = data.split(" ");
+        let [type, quantity, sender, recipient] = data.split(" ");
 
         type = +type;
         quantity = quantity || 1;
 
         let builder = new Builder(app)
 
-        let transactions = await builder.buildTransaction(type, quantity)
+        let { transactions, walletChanges } = await builder.buildTransaction(type, quantity, sender, recipient)
 
-        await app.client.postTransaction(transactions)
+        let reponse = await app.client.postTransaction(transactions)
+
+        app.walletRepository.handleWalletChanges(walletChanges, reponse)
 
     } catch (ex) {
         console.log(ex.message);
