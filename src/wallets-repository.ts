@@ -60,6 +60,7 @@ export class WalletRepository {
                             signType: WalletSignType.MultiSignature,
                             passphrases: walletChange.passphrases,
                             address: walletChange.address,
+                            publicKey: walletChange.publicKey
                         }
 
                         this.addWallet(wallet);

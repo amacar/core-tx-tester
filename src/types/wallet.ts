@@ -3,6 +3,7 @@ import {WalletSignType} from "../enums";
 export interface WalletChange {
     transaction: any,
     address: string,
+    publicKey: string,
     secondPassphrase?: string,
     passphrases?: string[]
 }

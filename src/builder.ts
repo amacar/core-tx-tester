@@ -121,6 +121,7 @@ export class Builder {
                 walletChanges.push({
                     transaction: transaction,
                     address: senderWallet.address,
+                    publicKey: undefined,
                     secondPassphrase: config.secondPassphrase || "second passphrase"
                 })
             } else if (type === Enums.TransactionType.DelegateRegistration) {
@@ -159,7 +160,8 @@ export class Builder {
                 walletChanges.push({
                     transaction: transaction,
                     address: multiSignatureAddress,
-                    passphrases: config.multiSignature.asset.participants
+                    passphrases: config.multiSignature.asset.participants,
+                    publicKey: Identities.PublicKey.fromMultiSignatureAsset(transaction.data.asset.multiSignature),
                 })
 
             } else if (type === Enums.TransactionType.Ipfs && Managers.configManager.getMilestone().aip11) {
