@@ -3,6 +3,7 @@ import { WalletRepository } from "./wallets-repository"
 
 import {config} from "./config/config";
 import {Prompt} from "./prompt";
+import {Filesystem} from "./filesystem";
 import * as cliActions from "./actions";
 import {App} from "./types";
 
@@ -55,13 +56,21 @@ import {App} from "./types";
  * - Remove passphrases and change indexes to test `min` etc.
  */
 
+let filesystem = new Filesystem();
+
+filesystem.loadWallets("testnet")
+
 // @ts-ignore
 const app: App = {
     config: config,
 
+
     client: new Client(),
+    walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets),
+    filesystem: filesystem,
+
     nonces: {},
-    walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets)
+
 }
 
 app.prompt = new Prompt(app)
