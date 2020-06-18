@@ -1,9 +1,10 @@
 import { Client } from "./client"
-import { Builder } from "./builder"
-import { transactions } from "./builders"
 import { WalletRepository } from "./wallets-repository"
 
 import {config} from "./config/config";
+import {Prompt} from "./prompt";
+import * as cliActions from "./actions";
+import {App} from "./types";
 
 
 /**
@@ -54,61 +55,19 @@ import {config} from "./config/config";
  * - Remove passphrases and change indexes to test `min` etc.
  */
 
-const app = {
+// @ts-ignore
+const app: App = {
     client: new Client(),
     nonces: {},
     walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets)
 }
 
-const sendTransaction = async (data) => {
-    try {
-        let [type, quantity, sender, recipient] = data.split(" ");
-
-        type = +type;
-        quantity = quantity || 1;
-
-        let builder = new Builder(app)
-
-        let { transactions, walletChanges } = await builder.buildTransaction(type, quantity, sender, recipient)
-
-        let reponse = await app.client.postTransaction(transactions)
-
-        app.walletRepository.handleWalletChanges(walletChanges, reponse)
-
-    } catch (ex) {
-        console.log(ex.message);
-    }
-}
-
-const prompt = (question, callback: Function) => {
-    return new Promise((resolve) => {
-        const stdin = process.stdin;
-        const stdout = process.stdout
-
-        stdin.resume();
-        stdout.write(question);
-
-        stdin.once('data', async (data) => {
-            await callback(data.toString().trim());
-
-            resolve()
-        });
-    })
-}
+app.prompt = new Prompt(app)
 
 const actions = [
-    {
-        description: "List wallets",
-        handler: async (data) => {
-            console.log("Wallets: \n", app.walletRepository.getWallets())
-        }
-    },
-    {
-        description: "Send transaction",
-        handler: async (data) => {
-            await prompt(selectTransactionQuestion(), sendTransaction);
-        }
-    }
+    cliActions.sendTransaction,
+    cliActions.listWallets,
+    cliActions.saveWallets
 ]
 
 const selectActionQuestion = () => {
@@ -124,31 +83,19 @@ const selectActionQuestion = () => {
     return question;
 }
 
-const selectTransactionQuestion = () => {
-    let question = "\nSelect transaction:";
-
-    for(let key of Object.keys(transactions)) {
-        question += `\n [${key}] - ${transactions[key]}`
-    }
-
-    question += "\n";
-
-    return question;
-}
-
-const resolveAction = async (data) => {
+const resolveAction = async (app: App, data: any) => {
     try {
         let [actionNumber] = data.split(" ");
 
         actionNumber = +actionNumber
         let action = actions[actionNumber]
 
-        await action.handler(data)
+        await action.handler(app, data)
     } catch (ex) {
         console.log(ex.message);
     } finally {
-        prompt(selectActionQuestion(), resolveAction);
+        app.prompt.prompt(selectActionQuestion(), resolveAction);
     }
 }
 
-prompt(selectActionQuestion(), resolveAction);
+app.prompt.prompt(selectActionQuestion(), resolveAction);
