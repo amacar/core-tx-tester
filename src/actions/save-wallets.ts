@@ -1,12 +1,17 @@
 import {App} from "../types";
-import { copy } from "fs-extra"
+import { outputJson } from "fs-extra"
+import { join } from "path"
 import {Action} from "../types/propmpt";
 
 
 export const action: Action = {
     description: "Save wallets",
     handler: async (app: App, data) => {
-        console.log("Wallets: \n", app.walletRepository.getWallets())
-        // await copy("../config/testnet/wallets.json", "../config/testnet/wallets-bkp.json")
+        const wallets = app.walletRepository.getWallets();
+        console.log(join(__dirname, `../config/${app.config.network}/wallet-snapshot.json`));
+
+        const path = join(__dirname, `../config/${app.config.network}/wallet-snapshot.json`)
+
+        await  outputJson(path, wallets)
     }
 }

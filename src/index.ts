@@ -57,6 +57,8 @@ import {App} from "./types";
 
 // @ts-ignore
 const app: App = {
+    config: config,
+
     client: new Client(),
     nonces: {},
     walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets)
