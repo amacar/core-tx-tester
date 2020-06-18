@@ -4,12 +4,16 @@ import {Identities} from "@arkecosystem/crypto";
 import {seeds} from "./config/testnet";
 
 export class Client {
-    private getSeed() {
+    public getRandomSeed() {
+        return seeds[Math.floor(Math.random()*seeds.length)];
+    }
+
+    public getSeed() {
         if (config.peer) {
             return config.peer;
         }
 
-        return seeds[Math.floor(Math.random()*seeds.length)];
+        this.getRandomSeed()
     }
 
     public async retrieveSenderWallet (sender: string, seed?: string) {

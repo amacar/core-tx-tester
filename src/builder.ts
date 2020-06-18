@@ -212,32 +212,31 @@ export class Builder {
                 const lockTransactionId = refund.lockTransactionId || ((await this.app.client.retrieveTransaction(senderWallet.publicKey, 8))[0].id)
 
                 transaction.htlcRefundAsset({ lockTransactionId });
-            // } else if (type === 11 && Managers.configManager.getMilestone().aip11) { // BusinessRegistration
-            //     transaction.businessRegistrationAsset(config.business.registration);
-            //
-            // } else if (type == 12 && Managers.configManager.getMilestone().aip11) { // BusinessResignation
-            // } else if (type == 13 && Managers.configManager.getMilestone().aip11) { // BusinessUpdate
-            //     transaction.businessUpdateAsset(config.business.update);
-            //
-            // } else if (type == 14 && Managers.configManager.getMilestone().aip11) { // BridgechainRegistration
-            //     transaction.bridgechainRegistrationAsset(config.bridgechain.registration);
-            //
-            // } else if (type == 15 && Managers.configManager.getMilestone().aip11) { // BridgechainResignation
-            //     if (!config.bridgechain.resignation.bridgechainId) {
-            //         config.bridgechain.resignation.bridgechainId = await this.app.client.retrieveBridgechainId(senderKeys.publicKey)
-            //     }
-            //     transaction.bridgechainResignationAsset(config.bridgechain.resignation.bridgechainId);
-            //
-            // } else if (type === 16 && Managers.configManager.getMilestone().aip11) { // BridgechainUpdate
-            //     if (!config.bridgechain.update.bridgechainId) {
-            //         config.bridgechain.update.bridgechainId = await this.app.client.retrieveBridgechainId(senderKeys.publicKey)
-            //     }
-            //
-            //     if (!config.bridgechain.update.seedNodes.length) {
-            //         config.bridgechain.update.seedNodes.push(randomSeed())
-            //     }
-            //
-            //     transaction.bridgechainUpdateAsset(config.bridgechain.update);
+            } else if (type === 11 && Managers.configManager.getMilestone().aip11) { // BusinessRegistration
+                transaction.businessRegistrationAsset(config.business.registration);
+
+            } else if (type == 12 && Managers.configManager.getMilestone().aip11) { // BusinessResignation
+            } else if (type == 13 && Managers.configManager.getMilestone().aip11) { // BusinessUpdate
+                transaction.businessUpdateAsset(config.business.update);
+
+            } else if (type == 14 && Managers.configManager.getMilestone().aip11) { // BridgechainRegistration
+                transaction.bridgechainRegistrationAsset(config.bridgechain.registration);
+
+            } else if (type == 15 && Managers.configManager.getMilestone().aip11) { // BridgechainResignation
+                if (!config.bridgechain.resignation.bridgechainId) {
+                    config.bridgechain.resignation.bridgechainId = await this.app.client.retrieveBridgechainId(senderWallet.publicKey)
+                }
+                transaction.bridgechainResignationAsset(config.bridgechain.resignation.bridgechainId);
+            } else if (type === 16 && Managers.configManager.getMilestone().aip11) { // BridgechainUpdate
+                if (!config.bridgechain.update.bridgechainId) {
+                    config.bridgechain.update.bridgechainId = await this.app.client.retrieveBridgechainId(senderWallet.publicKey)
+                }
+
+                if (!config.bridgechain.update.seedNodes.length) {
+                    config.bridgechain.update.seedNodes.push(this.app.client.getRandomSeed())
+                }
+
+                transaction.bridgechainUpdateAsset(config.bridgechain.update);
             } else {
                 throw new Error("Version 2 not supported.");
             }
@@ -266,39 +265,6 @@ export class Builder {
                 }
             }
 
-            // if (config.multiSignature.enabled && type !== 4) {
-            //     const multiSigAddress = multiSignatureAddress();
-            //     transaction.senderPublicKey(multiSigAddress.publicKey);
-            //     console.log(`MultiSignature: ${JSON.stringify(multiSigAddress, undefined, 4)}`);
-            // }
-            //
-            // if (config.multiSignature.enabled || type === 4) {
-            //     if (type === 4) {
-            //         const multiSignatureAddress = Identities.Address.fromMultiSignatureAsset(transaction.data.asset.multiSignature);
-            //         console.log(`Created MultiSignature address: ${multiSignatureAddress}`);
-            //         transaction.senderPublicKey(senderWallet.publicKey);
-            //
-            //         const participants = config.multiSignature.asset.participants;
-            //         for (let i = 0; i < participants.length; i++) {
-            //             transaction.multiSign(participants[i], i);
-            //         }
-            //     } else {
-            //         for (const {index, passphrase} of config.multiSignature.passphrases) {
-            //             transaction.multiSign(passphrase, index);
-            //         }
-            //     }
-            // }
-            //
-            // if (!config.multiSignature.enabled || type === 4) {
-            //     sign(transaction, senderWallet.passphrase);
-            //
-            //     if (config.secondPassphrase) {
-            //         secondSign(transaction, config.secondPassphrase);
-            //     } else if (senderWallet.secondPublicKey) {
-            //         secondSign(transaction, "second passphrase");
-            //     }
-            // }
-
             const instance = transaction.build();
             const payload = instance.toJson();
 
@@ -306,7 +272,7 @@ export class Builder {
                 console.log(`Transaction: ${JSON.stringify(payload, undefined, 4)}`);
             }
 
-            assert(instance.verify() || config.multiSignature.enabled);
+            assert(instance.verify() || senderWallet.signType === WalletSignType.MultiSignature);
             transactions.push(payload);
         }
 
