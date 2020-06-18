@@ -1,5 +1,4 @@
-{
-  "wallets": [
+[
     {
       "passphrase": "2.6-wallet1",
       "address": "DHKxXag9PjfjHBbPg3HQS5WCaQZdgDf6yi",
@@ -500,5 +499,4 @@
       "address": "DM6emC4WnxyP2RzrNW5VMS2n3sNfz6Xpci",
       "publicKey": "02e4d8687dc6cc60ec07e87e28d372dc15819a5ecb0a2180f1201bbbb55e1a0881"
     }
-  ]
-}
+]

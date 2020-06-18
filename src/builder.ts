@@ -1,6 +1,5 @@
 import {builders} from "./builders"
 import {config} from "./config/config";
-import {testWallets} from "./config/testnet";
 import {Crypto, Enums, Identities, Managers, Transactions, Utils} from "@arkecosystem/crypto";
 
 import {App, ExtendedWallet, WalletChange} from "./types";
@@ -148,9 +147,18 @@ export class Builder {
 
                 transaction.min(config.multiSignature.asset.min)
 
+                const multiSignatureAddress = Identities.Address.fromMultiSignatureAsset(transaction.data.asset.multiSignature);
+                console.log(`Created MultiSignature address: ${multiSignatureAddress}`);
+                transaction.senderPublicKey(senderWallet.publicKey);
+
+                const participants = config.multiSignature.asset.participants;
+                for (let i = 0; i < participants.length; i++) {
+                    transaction.multiSign(participants[i], i);
+                }
+
                 walletChanges.push({
                     transaction: transaction,
-                    address: senderWallet.address,
+                    address: multiSignatureAddress,
                     passphrases: config.multiSignature.asset.participants
                 })
 
@@ -165,7 +173,7 @@ export class Builder {
                     const count = Math.floor(Math.random() * (128 - 64 + 1) + 64);
                     for (let i = 0; i < count; i++) {
                         payments.push({
-                            recipientId: testWallets[i % testWallets.length].address,
+                            recipientId: this.app.walletRepository.getRandomWallet().address,
                             amount: "1"
                         });
                     }

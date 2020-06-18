@@ -9,7 +9,7 @@ export interface WalletChange {
 
 export interface Wallet {
     signType: WalletSignType,
-    passphrase: string,
+    passphrase?: string,
     secondPassphrase?: string,
     passphrases?: string[]
     address: string,

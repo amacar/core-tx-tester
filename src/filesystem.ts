@@ -12,7 +12,7 @@ export class Filesystem {
             path = join(configPath, `${preset}/wallets.json`)
         }
 
-        return await readJson(path)
+        return (await readJson(path))
     }
 
     async saveWalletsSnapshot (preset: string, wallets: Wallet[]) {
