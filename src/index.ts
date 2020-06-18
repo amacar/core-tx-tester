@@ -56,24 +56,28 @@ import {App} from "./types";
  * - Remove passphrases and change indexes to test `min` etc.
  */
 
-let filesystem = new Filesystem();
+const main = async () => {
+    let filesystem = new Filesystem();
 
-filesystem.loadWallets("testnet")
+    filesystem.loadWallets("testnet")
 
 // @ts-ignore
-const app: App = {
-    config: config,
+    const app: App = {
+        config: config,
 
 
-    client: new Client(),
-    walletRepository: new WalletRepository(require(`./config/${config.network}`).testWallets),
-    filesystem: filesystem,
+        client: new Client(),
+        walletRepository: new WalletRepository(await filesystem.loadWallets(config.network)),
+        filesystem: filesystem,
 
-    nonces: {},
+        nonces: {},
 
+    }
+
+    app.prompt = new Prompt(app)
+
+    app.prompt.prompt(selectActionQuestion(), resolveAction);
 }
-
-app.prompt = new Prompt(app)
 
 const actions = [
     cliActions.sendTransaction,
@@ -109,4 +113,4 @@ const resolveAction = async (app: App, data: any) => {
     }
 }
 
-app.prompt.prompt(selectActionQuestion(), resolveAction);
+main()

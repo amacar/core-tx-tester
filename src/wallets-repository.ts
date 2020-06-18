@@ -8,7 +8,15 @@ export class WalletRepository {
 
     public constructor(wallets: Wallet[]) {
         for(let wallet of wallets) {
-            wallet.signType = WalletSignType.Basic
+            if (wallet.passphrase && wallet.secondPassphrase) {
+                wallet.signType = WalletSignType.SecondSignature
+            } else if (wallet.passphrases) {
+                wallet.signType = WalletSignType.MultiSignature
+            } else if (wallet.passphrase) {
+                wallet.signType = WalletSignType.Basic
+            } else {
+                throw new Error(`Error loading wallet: ${wallet}`)
+            }
             this.wallets.push(wallet)
         }
     }
