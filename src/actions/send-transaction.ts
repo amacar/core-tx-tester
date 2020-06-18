@@ -8,7 +8,7 @@ const sendTransaction = async (app: App, data: any) => {
         let [type, quantity, sender, recipient] = data.split(" ");
 
         type = +type;
-        quantity = quantity || 1;
+        quantity = quantity ? +quantity : 1;
 
         let builder = new Builder(app)
 

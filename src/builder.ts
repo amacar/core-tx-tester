@@ -77,18 +77,17 @@ export class Builder {
         let senderWallet = (senderAddress ? this.app.walletRepository.getWallet(senderAddress) : this.app.walletRepository.getRandomWallet()) as ExtendedWallet
         let recipientWallet = recipientAddress ? this.app.walletRepository.getWallet(recipientAddress) : this.app.walletRepository.getRandomWallet()
 
-        const senderKeys = Identities.Keys.fromPassphrase(senderWallet.passphrase);
-        const recipientId = Identities.Address.fromPassphrase(recipientWallet.passphrase);
+        const recipientId = recipientWallet.address
 
         senderWallet = {
             ...senderWallet,
-            ...(await this.app.client.retrieveSenderWallet(Identities.Address.fromPublicKey(senderKeys.publicKey)))
+            ...(await this.app.client.retrieveSenderWallet(Identities.Address.fromPublicKey(senderWallet.publicKey)))
         };
 
         const transactions = [];
 
         for (let i = 0; i < quantity; i++) {
-            let nonce = this.app.nonces[senderKeys.publicKey];
+            let nonce = this.app.nonces[senderWallet.publicKey];
             if (!nonce) {
                 let senderNonce = senderWallet.nonce;
                 if (config.multiSignature.enabled) {
@@ -99,11 +98,11 @@ export class Builder {
             } else {
                 nonce = nonce.plus(1);
             }
-            this.app.nonces[senderKeys.publicKey] = nonce;
+            this.app.nonces[senderWallet.publicKey] = nonce;
 
             const transaction = builder()
                 .nonce(nonce.toFixed())
-                .senderPublicKey(senderKeys.publicKey);
+                .senderPublicKey(senderWallet.publicKey);
 
             if (config.fee) {
                 transaction.fee(config.fee)
@@ -125,7 +124,7 @@ export class Builder {
                     secondPassphrase: config.secondPassphrase || "second passphrase"
                 })
             } else if (type === Enums.TransactionType.DelegateRegistration) {
-                const username = config.delegateName || `delegate.${senderKeys.publicKey.slice(0, 10)}`;
+                const username = config.delegateName || `delegate.${senderWallet.publicKey.slice(0, 10)}`;
                 transaction.usernameAsset(username);
 
             } else if (type === Enums.TransactionType.Vote) {
@@ -137,7 +136,7 @@ export class Builder {
                     if (senderWallet.vote) {
                         transaction.votesAsset([`-${senderWallet.vote}`])
                     } else {
-                        transaction.votesAsset([`+${senderKeys.publicKey}`])
+                        transaction.votesAsset([`+${senderWallet.publicKey}`])
                     }
                 }
 

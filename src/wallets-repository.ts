@@ -1,13 +1,14 @@
 import {Wallet, WalletChange} from "./types";
 import {WalletSignType} from "./enums";
 
-import {Transactions} from "@arkecosystem/crypto";
+import { Identities, Transactions} from "@arkecosystem/crypto";
 
 export class WalletRepository {
     private wallets: Wallet[] = [];
 
     public constructor(wallets: Wallet[]) {
         for(let wallet of wallets) {
+
             if (wallet.passphrase && wallet.secondPassphrase) {
                 wallet.signType = WalletSignType.SecondSignature
             } else if (wallet.passphrases) {
@@ -17,6 +18,11 @@ export class WalletRepository {
             } else {
                 throw new Error(`Error loading wallet: ${wallet}`)
             }
+
+            if (!wallet.publicKey) {
+                wallet.publicKey = Identities.PublicKey.fromPassphrase(wallet.passphrase)
+            }
+
             this.wallets.push(wallet)
         }
     }
